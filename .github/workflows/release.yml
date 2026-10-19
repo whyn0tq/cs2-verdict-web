@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check PHP syntax
+        run: find . -name '*.php' -not -path './.git/*' -print0 | xargs -0 -n1 php -l > /dev/null
+
+      - name: Archive
+        run: zip -r verdict-web.zip . -x ".git/*" ".github/*" "docs/*" "README*.md" "verdict-web.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verdict-web
+          path: verdict-web.zip
+
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: verdict-web.zip
+          generate_release_notes: true
